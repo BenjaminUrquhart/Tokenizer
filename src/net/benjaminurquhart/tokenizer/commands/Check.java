@@ -21,12 +21,6 @@ public class Check extends Command<Tokenizer> {
 	
 	public Check(){
 		super("check","bot id");
-		try {
-			github = GitHub.connectAnonymously();
-		}
-		catch (IOException e) {
-			throw new IllegalStateException("Failed to authenticate with Github! " + e);
-		}
 	}
 	@SuppressWarnings("deprecation")
 	@Override
@@ -38,20 +32,38 @@ public class Check extends Command<Tokenizer> {
 			return;
 		}
 		try{
-			String b64ID = Base64.getEncoder().encodeToString(args[2].getBytes());
-			List<GHContent> results = github.searchContent().q(b64ID).list().asList();
-			for(GHContent result : results){
-				if(result.getContent().split("/[MN][A-Za-z\\d]{23}\\.[\\w-]{6}\\.[\\w-]{27}/g", 2).length > 1){
-					EmbedBuilder eb = new EmbedBuilder();
-					eb.setColor(Color.RED);
-					eb.setTitle("Token Found", result.getGitUrl());
-					eb.addField("Repository", String.format("[%s](%s)", result.getOwner().getName(), result.getOwner().getHttpTransportUrl()), true);
-					eb.addField("File", String.format("[%s](%s)", result.getName(), result.getGitUrl()), true);
-					channel.sendMessage(eb.build()).queue();
-					return;
+			if(github == null){
+				try {
+					github = self.getGHUsername() == null ? GitHub.connectAnonymously() : GitHub.connectUsingPassword(self.getGHUsername(), self.getGHPassword());
+				}
+				catch (IOException e) {
+					throw new IllegalStateException("Failed to authenticate with Github! " + e);
 				}
 			}
-			channel.sendMessage("No results found! Safe!").queue();
+			event.getJDA().retrieveUserById(args[2]).queue((user) -> {
+				try{
+					channel.sendTyping().queue();
+					String b64ID = Base64.getEncoder().encodeToString(args[2].getBytes());
+					List<GHContent> results = github.searchContent().q(b64ID).list().asList();
+					for(GHContent result : results){
+						if(result.getContent().contains(b64ID)){
+							EmbedBuilder eb = new EmbedBuilder();
+							eb.setColor(Color.RED);
+							eb.setTitle("Token Found", result.getGitUrl());
+							eb.setDescription(user.getAsMention());
+							eb.addField("Repository", String.format("[%s](%s)", result.getOwner().getName(), result.getOwner().getHttpTransportUrl()), true);
+							eb.addField("File", String.format("[%s](%s)", result.getName(), result.getHtmlUrl()), true);
+							channel.sendMessage(eb.build()).queue();
+							return;
+						}
+					}
+					channel.sendMessage("No results found! Safe!").queue();
+				}
+				catch(IOException e){
+					channel.sendMessage(e.toString()).queue();
+					e.printStackTrace();
+				}
+			}, (e) -> channel.sendMessage(e.toString()).queue());
 		}
 		catch(Exception e){
 			channel.sendMessage(e.toString()).queue();
