@@ -46,6 +46,10 @@ public class Check extends Command<Tokenizer> {
 		}, 0, 5, TimeUnit.SECONDS);
 	}
 	@Override
+	public String getDescription() {
+		return "searches for the given bot's token on Github";
+	}
+	@Override
 	public void handle(GuildMessageReceivedEvent event, Tokenizer self) {
 		TextChannel channel = event.getChannel();
 		String[] args = event.getMessage().getContentRaw().toUpperCase().split(" ", 3);
@@ -63,7 +67,7 @@ public class Check extends Command<Tokenizer> {
 				}
 			}
 			event.getJDA().retrieveUserById(args[2]).queue((user) -> {
-				channel.sendMessage(String.format("Your request has been queued (Approximate wait time: %d seconds)", queue.size()*15)).queue((m) -> queue.add(new QueuedAction(event, user, github)));
+				channel.sendMessage(String.format("Your request has been queued (Approximate wait time: %d seconds)", (queue.size()+1)*15)).queue((m) -> queue.add(new QueuedAction(event, user, github)));
 			}, (e) -> channel.sendMessage(e.toString()).queue());
 		}
 		catch(Exception e){
