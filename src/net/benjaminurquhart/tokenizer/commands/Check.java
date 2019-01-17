@@ -63,7 +63,7 @@ public class Check extends Command<Tokenizer> {
 				}
 			}
 			event.getJDA().retrieveUserById(args[2]).queue((user) -> {
-				channel.sendMessage(String.format("Your request has been queued (Approximate wait time: %d seconds)", queue.size()*5)).queue((m) -> queue.add(new QueuedAction(event, user, github)));
+				channel.sendMessage(String.format("Your request has been queued (Approximate wait time: %d seconds)", queue.size()*15)).queue((m) -> queue.add(new QueuedAction(event, user, github)));
 			}, (e) -> channel.sendMessage(e.toString()).queue());
 		}
 		catch(Exception e){
